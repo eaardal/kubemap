@@ -1,4 +1,7 @@
 import K8sService from '../../services/K8sService';
+import NodeConnectorUtil, {
+  NodeConnectionPoint,
+} from '../../utils/NodeConnectorUtil';
 
 const NODE_HEIGHT = 80;
 const NODE_WIDTH = 250;
@@ -20,22 +23,6 @@ const substitutePlaceholderIfNotExists = (pod, options) =>
     : pod;
 
 const withLayout = (pod, layout) => Object.assign({}, pod, { layout });
-
-const connectNodes = (nodeStart, nodeEnd) => {
-  const startX = nodeStart.layout.x;
-  const startY = nodeStart.layout.y;
-  const endX = nodeEnd.layout.x;
-  const endY = nodeEnd.layout.y;
-  return {
-    layout: {
-      kind: 'connector',
-      startX,
-      startY,
-      endX,
-      endY,
-    },
-  };
-};
 
 export const getTransactionSystemPods = async () => {
   const k8s = new K8sService();
@@ -136,38 +123,67 @@ export const getTransactionSystemPods = async () => {
     },
   };
 
-  const deviceToFirebaseConnector = connectNodes(deviceNode, firebaseNode);
-  const firebaseToSessionInitiatorConnector = connectNodes(
+  const deviceToFirebaseConnector = NodeConnectorUtil.connectNodesAt(
+    deviceNode,
     firebaseNode,
-    sessionInitiatorNode
+    NodeConnectionPoint.centerRight,
+    NodeConnectionPoint.centerLeft
   );
-  const sessionInitiatorToPubSubConnector = connectNodes(
+
+  const firebaseToSessionInitiatorConnector = NodeConnectorUtil.connectNodesAt(
+    firebaseNode,
     sessionInitiatorNode,
-    pubsubNode
+    NodeConnectionPoint.centerTop,
+    NodeConnectionPoint.centerLeft
   );
-  const pubSubToTransactionEngineConnector = connectNodes(
+
+  const sessionInitiatorToPubSubConnector = NodeConnectorUtil.connectNodesAt(
+    sessionInitiatorNode,
     pubsubNode,
-    transactionEngineNode
+    NodeConnectionPoint.bottomCenter,
+    NodeConnectionPoint.centerTop
   );
-  const transactionEngineToMilkywayConnector = connectNodes(
+
+  const pubSubToTransactionEngineConnector = NodeConnectorUtil.connectNodesAt(
+    pubsubNode,
     transactionEngineNode,
-    milkywayNode
+    NodeConnectionPoint.centerTop,
+    NodeConnectionPoint.centerLeft
   );
-  const pubSubToSessionsSyncConnector = connectNodes(
+
+  const transactionEngineToMilkywayConnector = NodeConnectorUtil.connectNodesAt(
+    transactionEngineNode,
+    milkywayNode,
+    NodeConnectionPoint.centerTop,
+    NodeConnectionPoint.bottomCenter
+  );
+
+  const pubSubToSessionsSyncConnector = NodeConnectorUtil.connectNodesAt(
     pubsubNode,
-    sessionsSyncNode
-  );
-  const pubSubToTransactionsSyncConnector = connectNodes(
-    pubsubNode,
-    transactionsSyncNode
-  );
-  const transactionsSyncToFirebaseConnector = connectNodes(
-    transactionsSyncNode,
-    firebaseNode
-  );
-  const sessionsSyncToFirebaseConnector = connectNodes(
     sessionsSyncNode,
-    firebaseNode
+    NodeConnectionPoint.bottomCenter,
+    NodeConnectionPoint.centerTop
+  );
+
+  const pubSubToTransactionsSyncConnector = NodeConnectorUtil.connectNodesAt(
+    pubsubNode,
+    transactionsSyncNode,
+    NodeConnectionPoint.bottomCenter,
+    NodeConnectionPoint.centerTop
+  );
+
+  const transactionsSyncToFirebaseConnector = NodeConnectorUtil.connectNodesAt(
+    transactionsSyncNode,
+    firebaseNode,
+    NodeConnectionPoint.centerLeft,
+    NodeConnectionPoint.bottomCenter
+  );
+
+  const sessionsSyncToFirebaseConnector = NodeConnectorUtil.connectNodesAt(
+    sessionsSyncNode,
+    firebaseNode,
+    NodeConnectionPoint.centerLeft,
+    NodeConnectionPoint.bottomCenter
   );
 
   return [

@@ -1,24 +1,39 @@
 /* eslint-disable no-restricted-globals */
 import React, { Component } from 'react';
-import { Stage, Layer, Rect, Text, Group, Line } from 'react-konva';
+import { Stage, Layer, Rect, Text, Group, Line, Image } from 'react-konva';
 import './App.css';
+import K8sLogo from './k8slogo.png';
+
+console.log('K8sLogo', K8sLogo);
+
+const COLOR_SERVICE_UP = '#90C97D';
+const COLOR_SERVICE_DOWN = '#C98B7D';
+const COLOR_SERVICE_UNKNOWN = '#B8B8B8';
+const COLOR_DEVICE = '#BDC6DB';
+const COLOR_FIREBASE = '#BDD8DB';
+const COLOR_PUBSUB = '#CFBDDB';
 
 const getFill = state => {
   switch (state) {
     case 'up':
-      return '#90C97D';
+      return COLOR_SERVICE_UP;
     case 'down':
-      return '#C98B7D';
+      return COLOR_SERVICE_DOWN;
     case 'unknown':
-      return '#c0c0c0';
+      return COLOR_SERVICE_UNKNOWN;
     default:
-      return '#c0c0c0';
+      return COLOR_SERVICE_UNKNOWN;
   }
 };
 
 class App extends Component {
   constructor(props) {
     super(props);
+    const k8slogo = new window.Image();
+    k8slogo.src = K8sLogo;
+    k8slogo.onload = () => {
+      this.setState({ k8slogo });
+    };
     this.state = { mapLayout: null };
   }
   async componentDidMount() {
@@ -47,7 +62,7 @@ class App extends Component {
               this.state.mapLayout
                 .filter(m => m.layout.kind === 'pod')
                 .map(m => (
-                  <Group key={m.name}>
+                  <Group key={`pod-${m.name}_${m.layout.x}_${m.layout.y}`}>
                     <Rect
                       name={m.name}
                       x={m.layout.x}
@@ -78,20 +93,29 @@ class App extends Component {
                       offsetY={-40}
                       offsetX={-10}
                     />
+                    <Image
+                      x={m.layout.x + m.layout.width}
+                      y={m.layout.y}
+                      width={25}
+                      height={25}
+                      image={this.state.k8slogo}
+                      offsetY={12}
+                      offsetX={12}
+                    />
                   </Group>
                 ))}
             {this.state.mapLayout &&
               this.state.mapLayout
                 .filter(m => m.layout.kind === 'device')
                 .map(m => (
-                  <Group key={m.name}>
+                  <Group key={`device-${m.name}_${m.layout.x}_${m.layout.y}`}>
                     <Rect
                       name={m.name}
                       x={m.layout.x}
                       y={m.layout.y}
                       width={m.layout.width}
                       height={m.layout.height}
-                      fill={'#909AD4'}
+                      fill={COLOR_DEVICE}
                       stroke="#C4C4C4"
                       strokeWidth={1}
                       shadowColor="#DBDBDB"
@@ -112,14 +136,14 @@ class App extends Component {
               this.state.mapLayout
                 .filter(m => m.layout.kind === 'db')
                 .map(m => (
-                  <Group key={m.name}>
+                  <Group key={`firebase-${m.name}_${m.layout.x}_${m.layout.y}`}>
                     <Rect
                       name={m.name}
                       x={m.layout.x}
                       y={m.layout.y}
                       width={m.layout.width}
                       height={m.layout.height}
-                      fill={'#90C3D4'}
+                      fill={COLOR_FIREBASE}
                       stroke="#C4C4C4"
                       strokeWidth={1}
                       shadowColor="#DBDBDB"
@@ -140,14 +164,14 @@ class App extends Component {
               this.state.mapLayout
                 .filter(m => m.layout.kind === 'pubsub')
                 .map(m => (
-                  <Group key={m.name}>
+                  <Group key={`pubsub-${m.name}_${m.layout.x}_${m.layout.y}`}>
                     <Rect
                       name={m.name}
                       x={m.layout.x}
                       y={m.layout.y}
                       width={m.layout.width}
                       height={m.layout.height}
-                      fill={'#C390D4'}
+                      fill={COLOR_PUBSUB}
                       stroke="#C4C4C4"
                       strokeWidth={1}
                       shadowColor="#DBDBDB"
@@ -168,7 +192,11 @@ class App extends Component {
               this.state.mapLayout
                 .filter(m => m.layout.kind === 'connector')
                 .map(m => (
-                  <Group key={m.name}>
+                  <Group
+                    key={`connector-${m.layout.startX}_${m.layout.startY}_${
+                      m.layout.endX
+                    }_${m.layout.endY}`}
+                  >
                     <Line
                       points={[
                         m.layout.startX,
