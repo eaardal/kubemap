@@ -1,0 +1,6 @@
+<Stage>
+  <Layer>
+    <Group> (Node.jsx)
+      <Text (headline)>
+      <Text (summary)>
+      <Rect (box)>

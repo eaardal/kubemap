@@ -1,0 +1,45 @@
+{
+  "name": "kubemap-server",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "bunyan": "^1.8.12",
+    "compression": "^1.7.3",
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "k8s": "^0.4.15",
+    "lodash": "^4.17.11",
+    "moment": "^2.23.0",
+    "morgan": "^1.9.1",
+    "nodemon": "^1.18.9",
+    "uuid": "^3.3.2"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=development nodemon src/app/main.js --exec babel-node --inspect"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^9.0.0",
+    "babel-jest": "^23.2.0",
+    "babel-plugin-relative-import": "^1.0.3",
+    "babel-plugin-root-import": "^6.1.0",
+    "babel-plugin-syntax-async-functions": "^6.13.0",
+    "babel-plugin-transform-regenerator": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "cross-env": "^5.2.0",
+    "eslint": "^5.10.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-config-prettier": "^3.0.1",
+    "eslint-import-resolver-babel-root-import": "0.0.2",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jest": "^21.21.0",
+    "eslint-plugin-prettier": "^2.6.2",
+    "jest": "^23.5.0",
+    "prettier": "1.14.2",
+    "prettier-eslint": "^8.8.2"
+  }
+}
