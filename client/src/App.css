@@ -1,32 +1,69 @@
-.App {
-  text-align: center;
+.NodeDetails__Background {
+  width: 500px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background-color: black;
+  opacity: 0.7;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 40vmin;
+.NodeDetails {
+  width: 500px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+.NodeDetails p,
+h1,
+h2,
+h3,
+h4,
+li {
+  color: #dbdbdb;
+}
+
+.NodeDetails h1,
+h2,
+h3,
+h4,
+ul {
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.NodeDetails h2 {
+  font-size: 14pt;
+}
+
+.NodeDetails p {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.NodeDetails__Pod {
+  margin-left: 15px;
+}
+
+.NodeDetails__Container {
+  margin-left: 10px;
+  margin-top: 30px;
+}
+
+.NodeDetails__Headline {
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.NodeDetails__Key {
+  color: #ababab;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.NodeDetails__CloseButton {
+  position: absolute;
+  top: 0px;
+  left: 450px; /* Left 440px + Width 60px = Details Overlay width 500px */
+  height: 20px;
+  width: 50px;
 }

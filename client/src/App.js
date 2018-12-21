@@ -1,6 +1,8 @@
 /* eslint-disable no-restricted-globals */
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
 import { Stage, Layer, Rect, Text, Group, Line, Image } from 'react-konva';
+import uuid from 'uuid/v4';
+import dateformat from 'dateformat';
 import './App.css';
 import K8sLogo from './k8slogo.png';
 
@@ -26,6 +28,17 @@ const getFill = state => {
   }
 };
 
+const Emoji = props => (
+  <span
+    className="emoji"
+    role="img"
+    aria-label={props.label ? props.label : ''}
+    aria-hidden={props.label ? 'false' : 'true'}
+  >
+    {props.symbol}
+  </span>
+);
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -34,7 +47,11 @@ class App extends Component {
     k8slogo.onload = () => {
       this.setState({ k8slogo });
     };
-    this.state = { mapLayout: null };
+    this.state = {
+      mapLayout: null,
+      showDetailsOverlay: false,
+      detailsObject: null,
+    };
   }
   async componentDidMount() {
     try {
@@ -62,7 +79,15 @@ class App extends Component {
               this.state.mapLayout
                 .filter(m => m.layout.kind === 'pod')
                 .map(m => (
-                  <Group key={`pod-${m.name}_${m.layout.x}_${m.layout.y}`}>
+                  <Group
+                    key={`pod-${m.name}_${m.layout.x}_${m.layout.y}`}
+                    onClick={() =>
+                      this.setState({
+                        showDetailsOverlay: true,
+                        detailsObject: m,
+                      })
+                    }
+                  >
                     <Rect
                       name={m.name}
                       x={m.layout.x}
@@ -217,9 +242,81 @@ class App extends Component {
                 ))}
           </Layer>
         </Stage>
-        <div className="NodeDetails">
-          <h1>Node details here</h1>
-        </div>
+        {this.state.showDetailsOverlay && (
+          <Fragment>
+            <div className="NodeDetails__Background" />
+            <div className="NodeDetails">
+              <button
+                className="NodeDetails__CloseButton"
+                onClick={() =>
+                  this.setState({
+                    showDetailsOverlay: false,
+                    detailsObject: null,
+                  })
+                }
+              >
+                Close
+              </button>
+              {this.state.detailsObject.pods.map(p => (
+                <div className="NodeDetails__Container" key={uuid()}>
+                  <h2 className="NodeDetails__Headline">{p.name}</h2>
+                  <div className="NodeDetails__Pod">
+                    <p>
+                      <span className="NodeDetails__Key">Namespace:</span>{' '}
+                      {p.namespace}
+                    </p>
+                    <p>
+                      <span className="NodeDetails__Key">Created:</span>{' '}
+                      {dateformat(
+                        p.createdTimestamp,
+                        'dddd, mmmm dS, yyyy, hh:MM:ss'
+                      )}
+                    </p>
+                    <h3 className="NodeDetails__Headline">Conditions</h3>
+                    <ul>
+                      {p.conditions.map(c => (
+                        <li key={`${c.type}_${c.status}`}>
+                          {c.type}:{' '}
+                          {c.status === 'True' ? (
+                            <Emoji label="checkmark" symbol="✅" />
+                          ) : (
+                            <Emoji label="prohibited" symbol="🚫" />
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    <h3 className="NodeDetails__Headline">
+                      Container Statuses
+                    </h3>
+                    <ul>
+                      {p.containerStatuses.map(c => (
+                        <div key={uuid()}>
+                          <h4>{c.name}</h4>
+                          <ul>
+                            <li>
+                              <span className="NodeDetails__Key">Ready:</span>{' '}
+                              {c.ready.toString()}
+                            </li>
+                            <li>
+                              <span className="NodeDetails__Key">State:</span>{' '}
+                              {c.state.state}
+                            </li>
+                            <li>
+                              <span className="NodeDetails__Key">
+                                Restart count:
+                              </span>{' '}
+                              {c.restartCount}
+                            </li>
+                          </ul>
+                        </div>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Fragment>
+        )}
       </div>
     );
   }
