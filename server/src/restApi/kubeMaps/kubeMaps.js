@@ -6,23 +6,58 @@ import NodeConnectorUtil, {
 const NODE_HEIGHT = 80;
 const NODE_WIDTH = 250;
 
-const findPod = (appName, pods) => pods.find(p => p.app === appName);
+const findPods = (appName, pods) => pods.filter(p => p.app === appName);
 
-const substitutePlaceholderIfNotExists = (pod, options) =>
-  typeof pod === 'undefined' || pod === null
-    ? {
-        app: options && options.app ? options.app : null,
-        name: options && options.name ? options.name : null,
-        namespace: options && options.namespace ? options.namespace : null,
-        kind: 'Pod',
-        createdTimestamp:
-          options && options.createdTimestamp ? options.createdTimestamp : null,
-        conditions: options && options.conditions ? options.conditions : [],
-        state: options && options.state ? options.state : 'unknown',
-      }
-    : pod;
+const substitutePlaceholderIfNotExists = (pods, placeholder) =>
+  typeof pods === 'undefined' || pods === null || (pods && pods.length === 0)
+    ? [
+        {
+          app: placeholder && placeholder.app ? placeholder.app : null,
+          name: placeholder && placeholder.name ? placeholder.name : null,
+          namespace:
+            placeholder && placeholder.namespace ? placeholder.namespace : null,
+          kind: 'Pod',
+          createdTimestamp:
+            placeholder && placeholder.createdTimestamp
+              ? placeholder.createdTimestamp
+              : null,
+          conditions:
+            placeholder && placeholder.conditions ? placeholder.conditions : [],
+          state:
+            placeholder && placeholder.state ? placeholder.state : 'unknown',
+        },
+      ]
+    : pods;
 
-const withLayout = (pod, layout) => Object.assign({}, pod, { layout });
+const withLayout = (deployment, layout) =>
+  Object.assign({}, deployment, { layout });
+
+const getDeploymentStateFromPods = pods =>
+  pods.reduce((curr, val) => {
+    if (curr === 'down' || curr === 'unknown') {
+      return curr;
+    }
+    switch (val.state) {
+      case 'up':
+        curr = 'up'; // eslint-disable-line no-param-reassign
+        break;
+      case 'down':
+        curr = 'down'; // eslint-disable-line no-param-reassign
+        break;
+      case 'unknown':
+        curr = 'unknown'; // eslint-disable-line no-param-reassign
+        break;
+      default:
+        break;
+    }
+    return curr;
+  }, 'up');
+
+const createDeploymentAroundPods = (pods, deployment) => ({
+  name: deployment.name,
+  pods,
+  state: getDeploymentStateFromPods(pods),
+});
 
 export const getTransactionSystemPods = async () => {
   const k8s = new K8sService();
@@ -30,30 +65,51 @@ export const getTransactionSystemPods = async () => {
     'session-initiator',
     'transaction-engine',
     'milkyway',
-    'transactions-sync',
+    'transaction-sync',
     'sessions-sync',
   ]);
 
-  const sessionInitiator = substitutePlaceholderIfNotExists(
-    findPod('session-initiator', pods),
+  const sessionInitiatorPods = substitutePlaceholderIfNotExists(
+    findPods('session-initiator', pods),
     { app: 'session-initiator', name: 'UNAVAILABLE' }
   );
 
-  const transactionEngine = substitutePlaceholderIfNotExists(
-    findPod('transaction-engine', pods),
+  const transactionEnginePods = substitutePlaceholderIfNotExists(
+    findPods('transaction-engine', pods),
     { app: 'transaction-engine', name: 'UNAVAILABLE' }
   );
-  const milkyway = substitutePlaceholderIfNotExists(findPod('milkyway', pods));
-  const transactionsSync = substitutePlaceholderIfNotExists(
-    findPod('transactions-sync', pods),
-    { app: 'transactions-sync', name: 'UNAVAILABLE' }
+  const milkywayPods = substitutePlaceholderIfNotExists(
+    findPods('milkyway', pods)
   );
-  const sessionsSync = substitutePlaceholderIfNotExists(
-    findPod('sessions-sync', pods),
+  const transactionsSyncPods = substitutePlaceholderIfNotExists(
+    findPods('transaction-sync', pods),
+    { app: 'transaction-sync', name: 'UNAVAILABLE' }
+  );
+  const sessionsSyncPods = substitutePlaceholderIfNotExists(
+    findPods('sessions-sync', pods),
     { app: 'sessions-sync', name: 'UNAVAILABLE' }
   );
 
-  const sessionInitiatorNode = withLayout(sessionInitiator, {
+  const sessionInitiatorDeployment = createDeploymentAroundPods(
+    sessionInitiatorPods,
+    { name: 'session-initiator' }
+  );
+  const transactionEngineDeployment = createDeploymentAroundPods(
+    transactionEnginePods,
+    { name: 'transaction-engine' }
+  );
+  const milkywayDeployment = createDeploymentAroundPods(milkywayPods, {
+    name: 'milkyway',
+  });
+  const transactionsSyncDeployment = createDeploymentAroundPods(
+    transactionsSyncPods,
+    { name: 'transaction-sync' }
+  );
+  const sessionsSyncDeployment = createDeploymentAroundPods(sessionsSyncPods, {
+    name: 'sessions-sync',
+  });
+
+  const sessionInitiatorNode = withLayout(sessionInitiatorDeployment, {
     kind: 'pod',
     x: 300,
     y: 100,
@@ -61,7 +117,7 @@ export const getTransactionSystemPods = async () => {
     width: NODE_WIDTH,
   });
 
-  const transactionEngineNode = withLayout(transactionEngine, {
+  const transactionEngineNode = withLayout(transactionEngineDeployment, {
     kind: 'pod',
     x: 650,
     y: 200,
@@ -69,7 +125,7 @@ export const getTransactionSystemPods = async () => {
     width: NODE_WIDTH,
   });
 
-  const milkywayNode = withLayout(milkyway, {
+  const milkywayNode = withLayout(milkywayDeployment, {
     kind: 'pod',
     x: 700,
     y: 50,
@@ -77,7 +133,7 @@ export const getTransactionSystemPods = async () => {
     width: NODE_WIDTH,
   });
 
-  const transactionsSyncNode = withLayout(transactionsSync, {
+  const transactionsSyncNode = withLayout(transactionsSyncDeployment, {
     kind: 'pod',
     x: 300,
     y: 450,
@@ -85,7 +141,7 @@ export const getTransactionSystemPods = async () => {
     width: NODE_WIDTH,
   });
 
-  const sessionsSyncNode = withLayout(sessionsSync, {
+  const sessionsSyncNode = withLayout(sessionsSyncDeployment, {
     kind: 'pod',
     x: 300,
     y: 550,

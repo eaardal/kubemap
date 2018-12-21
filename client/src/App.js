@@ -79,20 +79,26 @@ class App extends Component {
                       x={m.layout.x}
                       y={m.layout.y}
                       text={m.name}
-                      fontSize={12}
+                      fontSize={16}
                       fontFamily="Calibri"
                       offsetY={-10}
                       offsetX={-10}
                     />
-                    <Text
-                      x={m.layout.x}
-                      y={m.layout.y}
-                      text={`${m.app}`}
-                      fontSize={16}
-                      fontFamily="Calibri"
-                      offsetY={-40}
-                      offsetX={-10}
-                    />
+                    {m.containerStatuses &&
+                      !m.containerStatuses.every(
+                        cs => cs.state.state === 'running'
+                      ) &&
+                      m.containerStatuses.map(cs => (
+                        <Text
+                          x={m.layout.x}
+                          y={m.layout.y}
+                          text={`${cs.state.reason}\n${cs.state.message}`}
+                          fontSize={14}
+                          fontFamily="Calibri"
+                          offsetY={-40}
+                          offsetX={-10}
+                        />
+                      ))}
                     <Image
                       x={m.layout.x + m.layout.width}
                       y={m.layout.y}
@@ -204,13 +210,16 @@ class App extends Component {
                         m.layout.endX,
                         m.layout.endY,
                       ]}
-                      stroke="#C4C4C4"
+                      stroke="#516870"
                       strokeWidth={2}
                     />
                   </Group>
                 ))}
           </Layer>
         </Stage>
+        <div className="NodeDetails">
+          <h1>Node details here</h1>
+        </div>
       </div>
     );
   }

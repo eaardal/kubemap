@@ -9,6 +9,7 @@ import logger from '../infrastructure/logger';
 import { getMapLayout } from '../restApi/mapLayouts/mapLayouts.router';
 */
 import { getTransactionSystemPods } from '../restApi/kubeMaps/kubeMaps';
+import K8sService from '../services/K8sService';
 
 export default app => {
   useCors(app);
@@ -37,6 +38,17 @@ export default app => {
     try {
       const pods = await getTransactionSystemPods();
       res.status(200).send(pods);
+    } catch (error) {
+      console.log('error', error);
+      res.status(500).send(error);
+    }
+  });
+
+  app.get('/full', async (req, res) => {
+    try {
+      const s = new K8sService();
+      const data = await s.getAllPodsRaw();
+      res.status(200).send(data);
     } catch (error) {
       console.log('error', error);
       res.status(500).send(error);

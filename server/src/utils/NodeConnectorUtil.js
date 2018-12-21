@@ -46,7 +46,7 @@ class NodeConnectorUtil {
         'node is invalid. Must contain props "x", "y", "width", "height"'
       );
     }
-    console.log('node', node);
+
     const x = node.layout.x + node.layout.width / 2;
     const { y } = node.layout;
 
