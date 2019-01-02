@@ -10,6 +10,7 @@ import { getMapLayout } from '../restApi/mapLayouts/mapLayouts.router';
 */
 import { getTransactionSystemPods } from '../restApi/kubeMaps/kubeMaps';
 import K8sService from '../services/K8sService';
+import StackdriverService from '../services/StackdriverService';
 
 export default app => {
   useCors(app);
@@ -51,6 +52,32 @@ export default app => {
       res.status(200).send(data);
     } catch (error) {
       console.log('error', error);
+      res.status(500).send(error);
+    }
+  });
+
+  app.get('/logs/:pod', async (req, res) => {
+    try {
+      const podName = req.params.pod;
+      if (!podName) {
+        res.status(400).send('podname param missing');
+        return;
+      }
+      const s = new K8sService();
+      const data = await s.getLogsForPod(podName);
+      res.status(200).send(data);
+    } catch (error) {
+      console.log('error', error);
+      res.status(500).send(error);
+    }
+  });
+
+  app.get('/sd', async (req, res) => {
+    try {
+      const s = new StackdriverService();
+      const data = await s.getPubSubSubscriptionLogs();
+      res.status(200).send(data);
+    } catch (error) {
       res.status(500).send(error);
     }
   });

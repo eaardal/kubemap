@@ -43,6 +43,26 @@ class K8sService {
         password: config.k8s.password,
       },
     });
+    this.kubeapi = K8s.api({
+      endpoint: config.k8s.endpoint,
+      version: config.k8s.version,
+      auth: {
+        username: config.k8s.username,
+        password: config.k8s.password,
+      },
+    });
+  }
+
+  getLogsForPod(pod) {
+    return new Promise((resolve, reject) => {
+      this.kubectl.command(`logs ${pod}`, (err, logs) => {
+        if (err) {
+          Logger.error(err);
+          reject(err);
+        }
+        resolve(logs);
+      });
+    });
   }
 
   getAllPodsRaw() {
@@ -96,15 +116,11 @@ class K8sService {
           reject(err);
         }
 
-        console.log('beforemap', pods.items.map(p => p.metadata.name));
-
         const podsMatchingNames = pods.items.filter(i =>
           startPhrases.some(p => i.metadata.name.startsWith(p))
         );
 
         const podList = mapPods(podsMatchingNames);
-
-        console.log('aftermap', podList.map(p => p.name));
 
         resolve(podList);
       });

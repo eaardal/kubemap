@@ -25,6 +25,10 @@ const substitutePlaceholderIfNotExists = (pods, placeholder) =>
             placeholder && placeholder.conditions ? placeholder.conditions : [],
           state:
             placeholder && placeholder.state ? placeholder.state : 'unknown',
+          containerStatuses:
+            placeholder && placeholder.containerStatuses
+              ? placeholder.containerStatuses
+              : [],
         },
       ]
     : pods;
@@ -242,6 +246,18 @@ export const getTransactionSystemPods = async () => {
     NodeConnectionPoint.bottomCenter
   );
 
+  const loadTransactionsTopic = {
+    name: 'sessionInitiatorPublishingTopics',
+    topics: ['LOAD_TRANSACTIONS', 'LOAD_ACCOUNTS', 'LOAD_CARDS'],
+    layout: {
+      kind: 'topic',
+      x: 380,
+      y: 220,
+      width: 200,
+      height: 50,
+    },
+  };
+
   return [
     firebaseNode,
     deviceNode,
@@ -260,5 +276,6 @@ export const getTransactionSystemPods = async () => {
     pubSubToTransactionsSyncConnector,
     transactionsSyncToFirebaseConnector,
     sessionsSyncToFirebaseConnector,
+    loadTransactionsTopic,
   ];
 };

@@ -14,6 +14,7 @@ const COLOR_SERVICE_UNKNOWN = '#B8B8B8';
 const COLOR_DEVICE = '#BDC6DB';
 const COLOR_FIREBASE = '#BDD8DB';
 const COLOR_PUBSUB = '#CFBDDB';
+const COLOR_TOPIC = '#C497C3';
 
 const getFill = state => {
   switch (state) {
@@ -50,7 +51,10 @@ class App extends Component {
     this.state = {
       mapLayout: null,
       showDetailsOverlay: false,
+      showLogsOverlay: false,
       detailsObject: null,
+      logs: [],
+      currentLogSubject: null,
     };
   }
   async componentDidMount() {
@@ -64,13 +68,23 @@ class App extends Component {
       console.log('error', error);
     }
   }
+  async getLogsForPod(podName) {
+    if (!podName || podName === 'UNAVAILABLE') {
+      return;
+    }
+    const res = await fetch(`http://localhost:3001/logs/${podName}`);
+    const logs = await res.text();
+    this.setState({
+      logs: {
+        [podName]: logs,
+      },
+      currentLogSubject: podName,
+      showLogsOverlay: true,
+    });
+    this.forceUpdate();
+  }
   render() {
-    const height =
-      this.state.mapLayout != null
-        ? this.state.mapLayout.length * this.state.mapLayout[0].layout.height +
-          200
-        : innerHeight;
-
+    const height = 800;
     return (
       <div className="App">
         <Stage width={innerWidth} height={height}>
@@ -81,14 +95,18 @@ class App extends Component {
                 .map(m => (
                   <Group
                     key={`pod-${m.name}_${m.layout.x}_${m.layout.y}`}
+                    className="PodGroup"
                     onClick={() =>
                       this.setState({
                         showDetailsOverlay: true,
                         detailsObject: m,
+                        showLogsOverlay: false,
+                        currentLogSubject: null,
                       })
                     }
                   >
                     <Rect
+                      className="PodGroup"
                       name={m.name}
                       x={m.layout.x}
                       y={m.layout.y}
@@ -103,7 +121,7 @@ class App extends Component {
                     <Text
                       x={m.layout.x}
                       y={m.layout.y}
-                      text={m.name}
+                      text={`${m.name} (${m.pods.length})`}
                       fontSize={16}
                       fontFamily="Calibri"
                       offsetY={-10}
@@ -240,6 +258,37 @@ class App extends Component {
                     />
                   </Group>
                 ))}
+            {this.state.mapLayout &&
+              this.state.mapLayout
+                .filter(m => m.layout.kind === 'topic')
+                .map(m => (
+                  <Group key={`topic-${m.name}_${m.layout.x}_${m.layout.y}`}>
+                    <Rect
+                      name={m.name}
+                      x={m.layout.x}
+                      y={m.layout.y}
+                      width={m.layout.width}
+                      height={m.layout.height}
+                      fill={COLOR_TOPIC}
+                      stroke="#C4C4C4"
+                      strokeWidth={1}
+                      shadowColor="#DBDBDB"
+                      shadowOffset={{ x: 1, y: 1 }}
+                    />
+                    {m.topics &&
+                      m.topics.map((topic, index) => (
+                        <Text
+                          x={m.layout.x}
+                          y={m.layout.y + 5}
+                          text={topic}
+                          fontSize={12}
+                          fontFamily="Calibri"
+                          offsetY={-12 * index}
+                          offsetX={-10}
+                        />
+                      ))}
+                  </Group>
+                ))}
           </Layer>
         </Stage>
         {this.state.showDetailsOverlay && (
@@ -252,68 +301,119 @@ class App extends Component {
                   this.setState({
                     showDetailsOverlay: false,
                     detailsObject: null,
+                    showLogsOverlay: false,
+                    currentLogSubject: null,
                   })
                 }
               >
                 Close
               </button>
-              {this.state.detailsObject.pods.map(p => (
-                <div className="NodeDetails__Container" key={uuid()}>
-                  <h2 className="NodeDetails__Headline">{p.name}</h2>
-                  <div className="NodeDetails__Pod">
-                    <p>
-                      <span className="NodeDetails__Key">Namespace:</span>{' '}
-                      {p.namespace}
-                    </p>
-                    <p>
-                      <span className="NodeDetails__Key">Created:</span>{' '}
-                      {dateformat(
-                        p.createdTimestamp,
-                        'dddd, mmmm dS, yyyy, hh:MM:ss'
-                      )}
-                    </p>
-                    <h3 className="NodeDetails__Headline">Conditions</h3>
-                    <ul>
-                      {p.conditions.map(c => (
-                        <li key={`${c.type}_${c.status}`}>
-                          {c.type}:{' '}
-                          {c.status === 'True' ? (
-                            <Emoji label="checkmark" symbol="✅" />
-                          ) : (
-                            <Emoji label="prohibited" symbol="🚫" />
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    <h3 className="NodeDetails__Headline">
-                      Container Statuses
-                    </h3>
-                    <ul>
-                      {p.containerStatuses.map(c => (
-                        <div key={uuid()}>
-                          <h4>{c.name}</h4>
-                          <ul>
-                            <li>
-                              <span className="NodeDetails__Key">Ready:</span>{' '}
-                              {c.ready.toString()}
-                            </li>
-                            <li>
-                              <span className="NodeDetails__Key">State:</span>{' '}
-                              {c.state.state}
-                            </li>
-                            <li>
-                              <span className="NodeDetails__Key">
-                                Restart count:
-                              </span>{' '}
-                              {c.restartCount}
-                            </li>
-                          </ul>
-                        </div>
-                      ))}
-                    </ul>
+              {this.state.detailsObject.pods &&
+                this.state.detailsObject.pods.map(p => (
+                  <div className="NodeDetails__Container" key={uuid()}>
+                    <h2 className="NodeDetails__Headline">{p.name}</h2>
+                    <div className="NodeDetails__Pod">
+                      <p>
+                        <span className="NodeDetails__Key">Namespace:</span>{' '}
+                        {p.namespace}
+                      </p>
+                      <p>
+                        <span className="NodeDetails__Key">Created:</span>{' '}
+                        {dateformat(
+                          p.createdTimestamp,
+                          'dddd, mmmm dS, yyyy, hh:MM:ss'
+                        )}
+                      </p>
+                      <h3 className="NodeDetails__Headline">Conditions</h3>
+                      {p.conditions.length === 0 && <p>N/A</p>}
+                      <ul>
+                        {p.conditions.map(c => (
+                          <li key={`${c.type}_${c.status}`}>
+                            {c.type}:{' '}
+                            {c.status === 'True' ? (
+                              <Emoji label="checkmark" symbol="✅" />
+                            ) : (
+                              <Emoji label="prohibited" symbol="🚫" />
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      <h3 className="NodeDetails__Headline">
+                        Container Statuses
+                      </h3>
+                      {p.containerStatuses.length === 0 && <p>N/A</p>}
+                      <ul>
+                        {p.containerStatuses.map(c => (
+                          <div key={uuid()}>
+                            <h4>{c.name}</h4>
+                            <ul>
+                              <li>
+                                <span className="NodeDetails__Key">Ready:</span>{' '}
+                                {c.ready.toString()}
+                              </li>
+                              <li>
+                                <span className="NodeDetails__Key">State:</span>{' '}
+                                {c.state.state}
+                              </li>
+                              <li>
+                                <span className="NodeDetails__Key">
+                                  Restart count:
+                                </span>{' '}
+                                {c.restartCount}
+                              </li>
+                            </ul>
+                          </div>
+                        ))}
+                      </ul>
+                      <button
+                        disabled={!p.name || p.name === 'UNAVAILABLE'}
+                        onClick={() => this.getLogsForPod(p.name)}
+                      >
+                        Show logs
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+            </div>
+          </Fragment>
+        )}
+        {this.state.showLogsOverlay && (
+          <Fragment>
+            <div className="LogDetails__Background" />
+            <div className="LogDetails">
+              <button
+                className="LogDetails__CloseButton"
+                onClick={() =>
+                  this.setState({
+                    showLogsOverlay: false,
+                    currentLogSubject: null,
+                  })
+                }
+              >
+                Close this
+              </button>
+              <button
+                className="LogDetails__CloseAllButton"
+                onClick={() =>
+                  this.setState({
+                    showDetailsOverlay: false,
+                    detailsObject: null,
+                    showLogsOverlay: false,
+                    currentLogSubject: null,
+                  })
+                }
+              >
+                Close all
+              </button>
+              <div className="LogDetails__Container">
+                <h2 className="LogDetails__Headline">{`Logs for ${
+                  this.state.currentLogSubject
+                }`}</h2>
+                {this.state.logs[this.state.currentLogSubject] &&
+                  this.state.logs[this.state.currentLogSubject]
+                    .split('\n')
+                    .map(line => <p key={uuid()}>{line}</p>)}
+              </div>
             </div>
           </Fragment>
         )}
